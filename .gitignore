@@ -1,0 +1,50 @@
+# ---------------------------------------------------------------
+# ESP-IDF: artefatos gerados por projeto (projects/*/)
+# ---------------------------------------------------------------
+build/
+build-*/
+managed_components/
+sdkconfig
+sdkconfig.old
+# Versionados de propósito (necessários à reprodução):
+#   sdkconfig.defaults, dependencies.lock, idf_component.yml, CMakeLists.txt
+
+# ---------------------------------------------------------------
+# Ambiente local / editor (contêm caminhos pessoais e porta COM)
+# ---------------------------------------------------------------
+.vscode/
+.idea/
+.devcontainer/
+.cache/
+.clangd
+compile_commands.json
+.claude/settings.local.json
+
+# ---------------------------------------------------------------
+# Credenciais e configuração local — nunca versionar
+# ---------------------------------------------------------------
+.env
+.env.*
+*.local
+sdkconfig.local
+secrets.*
+credentials.*
+*.pem
+*.key
+*.p12
+*.pfx
+nvs_keys*.bin
+
+# ---------------------------------------------------------------
+# Python / ferramentas
+# ---------------------------------------------------------------
+__pycache__/
+*.pyc
+*.log
+
+# ---------------------------------------------------------------
+# Sistema operacional
+# ---------------------------------------------------------------
+Thumbs.db
+desktop.ini
+.DS_Store
