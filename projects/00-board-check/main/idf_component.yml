@@ -1,0 +1,17 @@
+# Versões fixadas = as que o exemplo oficial resolveu e que rodaram na placa
+# (waveshareteam/ESP32-S3-Touch-LCD-7 @ bc51a84, 09_lvgl_v9_demo, em 2026-11-06).
+# Restrições originais do exemplo: lvgl ^9, esp_lvgl_adapter ^0.5.2, gt911 ^1.
+# Dependências transitivas: ver dependencies.lock.
+dependencies:
+  idf:
+    version: ">=5.5,<5.6"
+
+  lvgl/lvgl:
+    version: "9.5.0"
+    public: true
+
+  espressif/esp_lvgl_adapter:
+    version: "0.5.3"
+
+  espressif/esp_lcd_touch_gt911:
+    version: "1.2.1"

@@ -1,0 +1,12 @@
+idf_component_register(
+    SRCS
+        "main.c"
+        "waveshare_rgb_lcd_port.c"
+    INCLUDE_DIRS ".")
+
+# Igual ao exemplo oficial: silencia -Wformat dentro da LVGL.
+idf_build_get_property(build_components BUILD_COMPONENTS)
+if("lvgl__lvgl" IN_LIST build_components)
+    idf_component_get_property(lvgl_lib lvgl__lvgl COMPONENT_LIB)
+    target_compile_options(${lvgl_lib} PRIVATE -Wno-format)
+endif()
