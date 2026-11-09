@@ -3,4 +3,6 @@
 cmake_minimum_required(VERSION 3.16)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+# Igual ao exemplo oficial (09_lvgl_v9_demo).
+add_compile_options("-Wno-attributes")
 project(board_check)

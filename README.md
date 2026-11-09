@@ -8,7 +8,7 @@ Cada pasta em `projects/` é um projeto **ESP-IDF independente**, compilado e gr
 
 | Pasta | Finalidade | Estado |
 |---|---|---|
-| [`projects/00-board-check`](projects/00-board-check/) | Valida a placa: gravação, logs seriais, PSRAM, LCD, backlight e touch | em validação. Ver [README do projeto](projects/00-board-check/README.md) |
+| [`projects/00-board-check`](projects/00-board-check/) | Valida a placa: gravação, logs seriais, PSRAM, LCD, backlight e touch | validado na placa (V1.1) em 2026-11-09. Ver [README do projeto](projects/00-board-check/README.md) |
 
 ## Base técnica
 

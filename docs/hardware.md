@@ -9,15 +9,19 @@ Placa-alvo de todos os projetos deste repositório. É a **versão com touch** (
 | Item | Valor | Status |
 |---|---|---|
 | Revisão no esquemático oficial | `ESP32-S3-Touch-LCD-7 V1.2` | documentado |
-| Revisão física desta placa | — | **PENDENTE**: conferir a serigrafia no verso da placa |
+| Revisão física desta placa | **V1.1** (serigrafia) | validado na placa, confirmado pelo usuário em 2026-11-09 |
 | Chip | ESP32-S3 (QFN56) **rev v0.2**, PSRAM embutida de 8 MB (AP, 3,3 V) | validado na placa (`esptool flash_id` e log de boot) |
 | Flash | **8 MB**, GigaDevice (JEDEC `c8` / `4017`), modo QIO, 3,3 V | validado na placa (`esptool flash_id`, log `spi_flash: detected chip: gd`) |
 
-A Waveshare não publica histórico de revisões nem diferenças entre versões. Se a serigrafia não indicar V1.2, compare a placa com o esquemático antes de confiar na pinagem abaixo.
+A Waveshare não publica histórico de revisões nem diferenças entre versões.
+
+### Divergência: placa V1.1 × esquemático V1.2
+
+O único esquemático publicado é o da **V1.2**, e esta placa é **V1.1**. A pinagem deste documento vem da página oficial e do exemplo de referência. Nesta placa, ela foi confirmada **apenas** para LCD, backlight, touch, CH422G (EXIO1, EXIO2 e EXIO5) e console. CAN, RS485, microSD, ADC e o conector I²C externo **não foram verificados na V1.1**: confira antes de usá-los.
 
 ### Divergência: flash de 16 MB × 8 MB
 
-A página do produto (e a especificação inicial deste repositório) diz "ESP32-S3N16R8, 16 MB de flash". **Esta placa tem 8 MB.** O `esptool` identifica um ESP32-S3 com PSRAM **embutida no encapsulamento** (ou seja, um ESP32-S3R8) e uma flash GigaDevice externa de 64 Mbit. Isso bate com o `sdkconfig.defaults` do exemplo oficial (`CONFIG_ESPTOOLPY_FLASHSIZE_8MB`) e com o README do exemplo ("ESP32-S3R8"). Os projetos deste repositório usam **8 MB**. Pode ser outra revisão ou outro lote. Confirmar pela serigrafia e, se possível, pela marcação do CI de flash.
+A página do produto (e a especificação inicial deste repositório) diz "ESP32-S3N16R8, 16 MB de flash". **Esta placa tem 8 MB.** O `esptool` identifica um ESP32-S3 com PSRAM **embutida no encapsulamento** (ou seja, um ESP32-S3R8) e uma flash GigaDevice externa de 64 Mbit. Isso bate com o `sdkconfig.defaults` do exemplo oficial (`CONFIG_ESPTOOLPY_FLASHSIZE_8MB`) e com o README do exemplo ("ESP32-S3R8"). Os projetos deste repositório usam **8 MB**. Hipótese não confirmada: a diferença vem da revisão (V1.1 × V1.2) ou do lote.
 
 ## Características (fonte: página oficial, salvo indicação)
 
@@ -103,6 +107,8 @@ Dispositivos no barramento: CH422G, GT911 e qualquer coisa ligada ao conector I�
 
 No exemplo, o GPIO4 é saída em nível baixo durante o reset, o que fixa o endereço do GT911 em `0x5D` (`ESP_LCD_TOUCH_IO_I2C_GT911_CONFIG`). Depois do reset o pino continua como saída. O touch funciona por **polling** (`int_gpio_num = -1`), sem interrupção.
 
+Nesta placa, o GT911 responde com `TouchPad_ID:0x39,0x31,0x31` ("911") e `TouchPad_Config_Version:88`. O adapter registra só eventos de um ponto (`LV_USE_GESTURE_RECOGNITION` desligado).
+
 ### Expansor CH422G
 
 | Saída | Função | Fonte |
@@ -129,7 +135,9 @@ Sequência do exemplo (`waveshare_rgb_lcd_port.c`):
 5. Espera 200 ms.
 6. `waveshare_rgb_lcd_backlight_on()`: `0x24 ← 0x01`, depois `0x38 ← 0x1E` (EXIO1–4 altos, **EXIO5 baixo (USB)**).
 
-**Consequência:** durante a inicialização do LCD e do touch, a USB nativa fica desconectada por pelo menos ~400 ms, porque o GPIO19/20 é chaveado para o CAN. Logs pela porta **USB** (USB Serial/JTAG) podem ser interrompidos e a porta COM pode reenumerar. A porta **UART** (CH343) não é afetada. Esse comportamento vem do exemplo oficial e foi mantido de propósito. Mudá-lo é decisão técnica pendente.
+**Consequência (observada no exemplo oficial em 2026-11-06):** a USB nativa caiu logo depois de `lcd_port: Initialize RGB LCD panel`, quando o GPIO19/20 passou para o CAN. O `idf.py monitor` mostrou `ClearCommError failed` e não reconectou. A COM3 voltou a enumerar depois, mas os logs seguintes se perderam. A porta **UART** (CH343) não depende do EXIO5.
+
+**Decisão (usuário, 2026-11-09): manter a USB nativa ligada.** Nos projetos deste repositório, o reset do touch escreve `0x0C` e `0x0E`, em vez de `0x2C` e `0x2E` (só o bit do EXIO5 muda). O resto da sequência é igual ao exemplo. Com isso, o 00-board-check mantém a USB durante toda a inicialização: o log vai do boot até `UI pronta` sem interrupção, e o touch e o backlight continuam funcionando (validado em 2026-11-09). A alteração está marcada no próprio `waveshare_rgb_lcd_port.c` e em `THIRD_PARTY_NOTICES.md`.
 
 O exemplo só liga e desliga o backlight. Não há controle de brilho (PWM).
 
@@ -161,6 +169,8 @@ O exemplo só liga e desliga o backlight. Não há controle de brilho (PWM).
 | Logs seriais (UART/CH343) | pendente | porta UART ainda não conectada |
 | PSRAM 8 MB inicializada | **validado** (2026-11-06) | `esp_psram: Found 8MB PSRAM device`, `SPI SRAM memory test OK`, `PSRAM: inicializada=sim, tamanho 8192 KB` |
 | Flash física | **validado: 8 MB** (diverge da página) | `Detected flash size: 8MB`, log `fisica (JEDEC) 8 MB` |
-| LCD exibe imagem | pendente | etapa 2, observação visual |
-| Backlight acende | pendente | etapa 2, observação visual |
-| Touch responde | pendente | etapa 2, toque no botão + log |
+| LCD exibe imagem | **validado** (usuário, 2026-11-09) | exemplo oficial: demo "widgets" nítida e estável · 00-board-check: título, identificação e uptime corretos |
+| Backlight acende | **validado** (usuário, 2026-11-09) | nos dois firmwares acima |
+| Touch responde | **validado** (usuário + log, 2026-11-09) | exemplo oficial: toque no ponto certo · 00-board-check: contador soma 1 por toque, com 108 eventos `botao pressionado` sequenciais no log, sem pulos |
+| USB nativa estável durante a inicialização do LCD | **validado** (2026-11-09), com o EXIO5 ajustado | log contínuo do boot até `UI pronta` em COM3 |
+| CAN, RS485, microSD, ADC, I²C externo | não testado | fora do escopo desta etapa; pinagem não conferida na V1.1 |

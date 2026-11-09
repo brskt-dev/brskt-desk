@@ -91,7 +91,7 @@ Get-PnpDevice -PresentOnly -Class Ports | Select-Object Status, FriendlyName, In
 | USB-C **USB** (USB nativa) | "Dispositivo Serial USB (COMn)" / "USB JTAG/serial debug unit" | `303A:1001` |
 | USB-C **UART** (CH343) | "USB-Enhanced-SERIAL CH343 (COMn)", esperado; ainda não observado nesta máquina | `1A86:55D3` (esperado) |
 
-As duas portas gravam e mostram logs. Use a porta **UART** quando o firmware mexer no EXIO5 (USB/CAN), como faz a inicialização do LCD: veja [hardware.md](hardware.md#expansor-ch422g).
+As duas portas gravam e mostram logs. Os projetos deste repositório mantêm o EXIO5 em USB, então a porta **USB** basta. O exemplo oficial da Waveshare, sem alterações, derruba a USB nativa na inicialização do LCD. Para ver os logs completos dele, use a porta **UART**: veja [hardware.md](hardware.md#expansor-ch422g).
 
 ## 6. Diagnóstico
 
@@ -102,6 +102,8 @@ As duas portas gravam e mostram logs. Use a porta **UART** quando o firmware mex
 | `Failed to connect` / timeout na gravação | Entre em modo de download manualmente: segure **BOOT**, pressione e solte **RESET**, solte **BOOT**. Grave de novo e depois pressione RESET. |
 | Porta ocupada (`could not open port`) | Feche outros monitores seriais (VS Code, PuTTY, SSCOM) e repita. |
 | Build estranho após trocar versões | `idf.py fullclean` e compile de novo. Só limpa o build, não mexe na placa. |
+| `shutil.Error ... [WinError 3] O sistema não pode encontrar o caminho especificado` ao baixar componentes | Caminho longo demais (limite de 260 caracteres do Windows). O `esp_lvgl_adapter` tem arquivos com até 67 caracteres dentro de `managed_components\espressif__esp_lvgl_adapter\`. Clone o repositório num caminho curto. Na máquina de referência, `...\brskt-desk\projects\00-board-check\` deixa o pior caso em cerca de 210 caracteres. A alternativa é ativar `LongPathsEnabled` no Windows, uma configuração do sistema que fica a critério do usuário. |
+| `idf.py monitor` mostra `ClearCommError failed` / `Waiting for the device to reconnect` e não volta | A USB nativa caiu (ex.: firmware que pôs o EXIO5 em CAN). Feche o monitor com `Ctrl+]` e abra de novo, ou use a porta UART. |
 | Tela preta após gravar | Pressione RESET. Confira os logs. Não presuma defeito sem comparar com o exemplo oficial. |
 
 **Não use `idf.py erase-flash` como tentativa padrão.** Apagar a flash inteira raramente resolve problemas de gravação ou de tela e apaga NVS e calibrações. Só com motivo explícito.
@@ -116,3 +118,22 @@ Para voltar ao firmware de fábrica: o repositório oficial tem binários em `fi
 4. Abra a pasta do **projeto** (ex.: `projects/00-board-check`), não a raiz do repositório.
 
 A extensão grava `.vscode/settings.json` com caminhos e porta locais. O `.gitignore` exclui `.vscode/`.
+
+## 8. Rodar o exemplo oficial da Waveshare
+
+É a referência para comparar comportamento de tela e touch. Fica fora deste repositório, num caminho **curto** (ver o diagnóstico de caminho longo acima):
+
+```powershell
+git clone --filter=blob:none --no-checkout https://github.com/waveshareteam/ESP32-S3-Touch-LCD-7.git "$env:USERPROFILE\esp-ref\ESP32-S3-Touch-LCD-7"
+cd "$env:USERPROFILE\esp-ref\ESP32-S3-Touch-LCD-7"
+git sparse-checkout set examples/ESP-IDF
+git checkout bc51a84b30c0cea018fee6e0d7427ec10102060e
+cd examples\ESP-IDF\09_lvgl_v9_demo
+idf.py build
+idf.py -p COMx flash
+```
+
+- Resultado esperado: demo "widgets" do LVGL, com touch funcionando. Validado nesta placa (V1.1) em 2026-11-09.
+- O exemplo não tem `dependencies.lock`. Em 2026-11-06 as restrições dele resolveram para as mesmas versões fixadas no `00-board-check`.
+- O build mostra 3 warnings `unknown kconfig symbol` (`LV_MEMCPY_MEMSET_STD`, `LV_MEM_CUSTOM`, `LV_COLOR_SCREEN_TRANSP`). São símbolos da LVGL 8 deixados no `sdkconfig.defaults` oficial e não afetam o resultado.
+- Pela porta USB nativa, o log para em `Initialize RGB LCD panel`, porque o exemplo põe o EXIO5 em CAN. Isso é esperado; ver [hardware.md](hardware.md#expansor-ch422g).
